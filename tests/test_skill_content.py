@@ -75,5 +75,21 @@ class StageSkillsTest(unittest.TestCase):
             self.assertEqual(check_artifacts.check(Path(tmp)), [])
 
 
+class ChangeSkillTest(unittest.TestCase):
+    def test_change_skill_has_gate_and_conventions(self):
+        text = skill_text("greenfield-change")
+        for phrase in ("approval", "superseded_by", "[dropped]", "Changelog", "out of scope", "using-greenfield"):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, text)
+        for heading in ("## Inputs", "## Interview", "## Output", "## Checklist"):
+            self.assertIn(heading, text)
+
+    def test_impact_table_template_columns(self):
+        text = (SKILLS / "greenfield-change/templates/impact-table.md").read_text(encoding="utf-8")
+        header = next(line for line in text.splitlines() if line.startswith("|"))
+        for word in ("keep", "rework", "discard"):
+            self.assertIn(word, header.lower())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -15,8 +15,7 @@ Design: [`docs/superpowers/specs/2026-11-11-greenfield-kit-design.md`](docs/supe
 | `greenfield-roadmap` | Approved vision → milestones; M1 is the MVP; exclusions with reasons. |
 | `greenfield-architecture` | Vision + roadmap → ADRs (2-3 options each) and Mermaid C4 views. |
 | `greenfield-todo` | One milestone → tasks with IDs, dependencies and verifiable done-when. |
-
-`greenfield-change` (mid-project goal/scope changes) is added next.
+| `greenfield-change` | Mid-project goal/scope change → impact table (keep/rework/discard), then versioned updates with `[dropped]`/superseded markers. |
 
 ## Install
 
