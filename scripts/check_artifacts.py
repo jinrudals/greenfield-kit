@@ -11,14 +11,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from validate_skills import parse_frontmatter  # noqa: E402
 
-ITEM_RE = re.compile(r"^- \*\*(?P<id>[^*]+)\*\*(?: \[(?P<status>\w+)\])?(?P<rest>.*)$")
+ITEM_RE = re.compile(r"^- \*\*(?P<id>[^*]+)\*\*\s*(?:\[(?P<status>[^\]]*)\])?(?P<rest>.*)$")
 ID_RES = {
     "vision": re.compile(r"^V-\d+$"),
     "roadmap": re.compile(r"^R-M\d+-\d+$"),
     "todo": re.compile(r"^T-M\d+-\d+$"),
 }
-ADR_RE = re.compile(r"^(ADR-\d{3})")
-REF_RE = re.compile(r"\b(?:refs|deps):\s*([A-Za-z0-9,\s-]+?)\s*(?=;|\(|$)")
+ADR_RE = re.compile(r"^(ADR-\d{3})(?:-|$)")
+ANY_ID_RE = re.compile(r"\b(?:V-\d+|R-M\d+-\d+|T-M\d+-\d+|ADR-\d{3})\b")
+REF_RE = re.compile(r"\b(?:refs|deps):\s*([^;(]*)")
 STATUSES = {"pending", "in_progress", "done", "dropped"}
 
 
@@ -37,6 +38,10 @@ def _inputs(fm):
 
 def check(root):
     root = Path(root)
+    if not root.is_dir():
+        return [f"{root}: not a directory"]
+    if not any(root.rglob("*.md")):
+        return [f"{root}: no Markdown documents found"]
     errors = []
     docs = {}  # key (path without .md) -> dict(rel, kind, fm)
     items = {}  # id -> (rel, kind, status)
@@ -55,8 +60,10 @@ def check(root):
         if kind == "adr":
             m = ADR_RE.match(rel.stem)
             if not m:
-                errors.append(f"{rels}: ADR file name must start with ADR-<nnn>")
+                errors.append(f"{rels}: ADR file name must start with ADR-<nnn> (three digits)")
                 continue
+            if m.group(1) in adrs:
+                errors.append(f"{rels}: duplicate ADR number {m.group(1)}")
             if fm.get("status") not in ("accepted", "superseded"):
                 errors.append(f"{rels}: `status` must be accepted or superseded")
             adrs[m.group(1)] = (rels, fm)
@@ -85,11 +92,12 @@ def check(root):
             if status == "dropped" and "(reason:" not in rest:
                 errors.append(f"{rels}: {item_id}: dropped item needs (reason: ...)")
             items[item_id] = (rels, kind, status)
-            if ";" in rest:
-                for chunk in REF_RE.findall(rest.split(";", 1)[1]):
-                    for ref in (r.strip() for r in chunk.split(",")):
-                        if ref:
-                            pending_refs.append((rels, kind, item_id, status, ref))
+            for m in REF_RE.finditer(rest):
+                ids = ANY_ID_RE.findall(m.group(1))
+                if not ids:
+                    errors.append(f"{rels}: {item_id}: refs/deps has no valid ID")
+                for ref in ids:
+                    pending_refs.append((rels, kind, item_id, status, ref))
 
     known = set(items) | set(adrs)
     for rels, kind, item_id, status, ref in pending_refs:

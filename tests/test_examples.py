@@ -39,6 +39,12 @@ class ExamplesTest(unittest.TestCase):
         self.assertIn("superseded_by: ADR-002", read(AFTER, "adr/ADR-001-storage.md"))
         self.assertTrue((AFTER / "adr/ADR-002-sqlite.md").is_file())
 
+    def test_superseded_adr_body_is_unchanged(self):
+        def body(base):
+            return read(base, "adr/ADR-001-storage.md").split("---", 2)[2]
+
+        self.assertEqual(body(BEFORE), body(AFTER))
+
     def test_change_scenario_has_impact_table(self):
         text = read(EXAMPLE, "change-scenario.md")
         for word in ("keep", "rework", "discard"):

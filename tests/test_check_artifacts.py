@@ -117,6 +117,49 @@ class CheckArtifactsTest(unittest.TestCase):
         self.write("adr/ADR-002-b.md", adr(status="superseded", superseded_by="ADR-001"))
         self.assertTrue(any("cycle" in e for e in self.errors()))
 
+    def test_missing_or_empty_root_is_an_error(self):
+        missing = check_artifacts.check(self.root / "nope")
+        self.assertTrue(any("not a directory" in e for e in missing), missing)
+        self.assertTrue(any("no Markdown" in e for e in self.errors()))
+
+    def test_status_tag_typos_are_reported(self):
+        for tag in ("[in-progress]", "[in progress]", "[droped]"):
+            with self.subTest(tag=tag):
+                self.write("vision.md", doc(body=f"- **V-1** {tag} text\n"))
+                self.assertTrue(any("V-1" in e and "status" in e for e in self.errors()), tag)
+
+    def test_double_space_before_dropped_still_requires_reason(self):
+        self.write("vision.md", doc(body="- **V-1**  [dropped] gone\n"))
+        self.assertTrue(any("V-1" in e and "reason" in e for e in self.errors()))
+
+    def test_refs_tolerate_punctuation_and_still_resolve(self):
+        self.valid_tree()
+        for ref in ("R-M1-9.", "`R-M1-9`", "R-M1-9 - see note", "R-M1-1, R-M1-9"):
+            with self.subTest(ref=ref):
+                self.write("todo/M1.md", doc(inputs=["roadmap"], body=f"- **T-M1-1** build; refs: {ref}\n"))
+                self.assertTrue(any("R-M1-9" in e and "unknown" in e for e in self.errors()), ref)
+
+    def test_comma_between_refs_and_deps_checks_both(self):
+        self.valid_tree()
+        self.write("todo/M1.md", doc(inputs=["roadmap"], body="- **T-M1-1** build; refs: R-M1-8, deps: T-M1-9\n"))
+        errors = self.errors()
+        self.assertTrue(any("R-M1-8" in e for e in errors), errors)
+        self.assertTrue(any("T-M1-9" in e for e in errors), errors)
+
+    def test_refs_without_any_valid_id(self):
+        self.valid_tree()
+        self.write("todo/M1.md", doc(inputs=["roadmap"], body="- **T-M1-1** build; refs: R-M1\n"))
+        self.assertTrue(any("T-M1-1" in e and "no valid ID" in e for e in self.errors()))
+
+    def test_duplicate_adr_number(self):
+        self.write("adr/ADR-003-cache.md", adr())
+        self.write("adr/ADR-003-auth.md", adr())
+        self.assertTrue(any("duplicate" in e and "ADR-003" in e for e in self.errors()))
+
+    def test_adr_number_must_be_three_digits(self):
+        self.write("adr/ADR-0001-x.md", adr())
+        self.assertTrue(any("ADR-0001-x.md" in e for e in self.errors()))
+
 
 if __name__ == "__main__":
     unittest.main()

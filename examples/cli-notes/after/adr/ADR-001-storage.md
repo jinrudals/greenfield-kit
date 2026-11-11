@@ -16,5 +16,3 @@ M1 needs persistence for at most a few thousand notes, no server, zero setup.
 
 ## Decision
 Option 1. Revisit if search exceeds the V-3 latency target.
-
-Superseded by ADR-002.
