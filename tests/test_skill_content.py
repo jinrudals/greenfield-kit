@@ -1,8 +1,13 @@
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SKILLS = ROOT / "skills"
+sys.path.insert(0, str(ROOT / "scripts"))
+
+import check_artifacts  # noqa: E402
 VENDOR_TOOL_NAMES = ("AskUserQuestion", "ask_user", "TodoWrite")
 
 
@@ -29,6 +34,45 @@ class UsingGreenfieldTest(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             for tool in VENDOR_TOOL_NAMES:
                 self.assertNotIn(tool, text, f"{path} mentions {tool}")
+
+
+STAGE_SKILLS = ("greenfield-vision", "greenfield-roadmap", "greenfield-architecture", "greenfield-todo")
+TEMPLATE_TARGETS = {
+    "greenfield-vision/templates/vision.md": "vision.md",
+    "greenfield-roadmap/templates/roadmap.md": "roadmap.md",
+    "greenfield-architecture/templates/architecture.md": "architecture.md",
+    "greenfield-architecture/templates/adr.md": "adr/ADR-001-example.md",
+    "greenfield-todo/templates/todo.md": "todo/M1.md",
+}
+
+
+class StageSkillsTest(unittest.TestCase):
+    def test_stage_skill_sections(self):
+        for name in STAGE_SKILLS:
+            text = skill_text(name)
+            for heading in ("## Inputs", "## Interview", "## Output", "## Checklist"):
+                with self.subTest(skill=name, heading=heading):
+                    self.assertIn(heading, text)
+
+    def test_stage_skill_defers_to_shared_rules(self):
+        for name in STAGE_SKILLS:
+            text = skill_text(name)
+            with self.subTest(skill=name):
+                self.assertIn("using-greenfield", text)
+                self.assertNotIn("one question at a time", text.lower())
+
+    def test_stage_skill_requires_approved_inputs(self):
+        for name in ("greenfield-roadmap", "greenfield-architecture", "greenfield-todo"):
+            with self.subTest(skill=name):
+                self.assertIn("status: approved", skill_text(name))
+
+    def test_templates_form_a_consistent_tree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for src, dest in TEMPLATE_TARGETS.items():
+                target = Path(tmp) / dest
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text((SKILLS / src).read_text(encoding="utf-8"), encoding="utf-8")
+            self.assertEqual(check_artifacts.check(Path(tmp)), [])
 
 
 if __name__ == "__main__":

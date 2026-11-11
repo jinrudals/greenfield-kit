@@ -11,8 +11,12 @@ Design: [`docs/superpowers/specs/2026-11-11-greenfield-kit-design.md`](docs/supe
 | Skill | What it does |
 |---|---|
 | `using-greenfield` | Entry point. Shared interview rules, stage detection, routing. |
+| `greenfield-vision` | Interview → approved vision (problem, users, measurable success, constraints, non-goals). |
+| `greenfield-roadmap` | Approved vision → milestones; M1 is the MVP; exclusions with reasons. |
+| `greenfield-architecture` | Vision + roadmap → ADRs (2-3 options each) and Mermaid C4 views. |
+| `greenfield-todo` | One milestone → tasks with IDs, dependencies and verifiable done-when. |
 
-More rows are added as skills land (vision, roadmap, architecture, todo, change).
+`greenfield-change` (mid-project goal/scope changes) is added next.
 
 ## Install
 
