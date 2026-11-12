@@ -1,0 +1,17 @@
+{
+  "name": "greenfield-kit",
+  "description": "Interview-driven skills that take a greenfield project from vision to roadmap, architecture and todo lists, and keep them consistent as goals change",
+  "version": "0.1.0",
+  "author": {
+    "name": "jinrudals"
+  },
+  "repository": "https://github.com/jinrudals/greenfield-kit",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "greenfield",
+    "roadmap",
+    "architecture",
+    "planning"
+  ]
+}
